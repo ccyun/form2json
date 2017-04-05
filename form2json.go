@@ -38,8 +38,10 @@ func Unmarshal(s string, str interface{}) (string, error) {
 	}
 	data := F.unmarshal([]string{}, 0)
 	d, _ := json.Marshal(data)
-	//jsonStr := regexp.MustCompile(`(:)\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(string(d), ":$1")
 	jsonStr := string(d)
+	jsonStr = regexp.MustCompile(`\:\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(jsonStr, ":$1")
+	jsonStr = regexp.MustCompile(`\[\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(jsonStr, "[$1")
+	jsonStr = regexp.MustCompile(`\,\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(jsonStr, ",$1")
 	if str != nil {
 		err = json.Unmarshal([]byte(jsonStr), str)
 	}
@@ -50,13 +52,13 @@ func (F *f2j) unmarshal(prefix []string, skep int) interface{} {
 	data1 := ders{}
 	data2 := make(derm)
 	nextSkep := skep + 1
+	isMap := false
 	for _, r := range F.input {
 		if len(r.keys) >= nextSkep {
 			if strings.Join(r.keys[0:skep], ".") == strings.Join(prefix, ".") {
 				isNum := false
-				if regexp.MustCompile("^[0-9]+").FindString(r.keys[skep]) != "" {
+				if regexp.MustCompile(`^\d+$`).FindString(r.keys[skep]) != "" {
 					isNum = true
-
 				}
 				if len(r.keys) == nextSkep {
 					if isNum {
@@ -66,10 +68,9 @@ func (F *f2j) unmarshal(prefix []string, skep int) interface{} {
 					}
 				} else {
 					if isNum {
-						data1 = append(data1, F.unmarshal(r.keys[0:nextSkep], nextSkep))
-					} else {
-						data2[r.keys[skep]] = F.unmarshal(r.keys[0:nextSkep], nextSkep)
+						isMap = true
 					}
+					data2[r.keys[skep]] = F.unmarshal(r.keys[0:nextSkep], nextSkep)
 				}
 			}
 		}
@@ -78,6 +79,12 @@ func (F *f2j) unmarshal(prefix []string, skep int) interface{} {
 		return data1
 	}
 	if len(data2) > 0 {
+		if isMap {
+			for _, v := range data2 {
+				data1 = append(data1, v)
+			}
+			return data1
+		}
 		return data2
 	}
 	return nil
