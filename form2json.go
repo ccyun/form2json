@@ -14,7 +14,9 @@ type input struct {
 	keys  []string
 	value string
 }
-type der map[string]interface{}
+
+type ders []interface{}
+type derm map[string]interface{}
 
 //Unmarshal form转json
 func Unmarshal(s string, str interface{}) (string, error) {
@@ -36,26 +38,47 @@ func Unmarshal(s string, str interface{}) (string, error) {
 	}
 	data := F.unmarshal([]string{}, 0)
 	d, _ := json.Marshal(data)
-	jsonStr := regexp.MustCompile(`:\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(string(d), ":$1")
+	//jsonStr := regexp.MustCompile(`(:)\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(string(d), ":$1")
+	jsonStr := string(d)
 	if str != nil {
 		err = json.Unmarshal([]byte(jsonStr), str)
 	}
 	return jsonStr, err
 }
 
-func (F *f2j) unmarshal(prefix []string, skep int) der {
-	data := make(der)
+func (F *f2j) unmarshal(prefix []string, skep int) interface{} {
+	data1 := ders{}
+	data2 := make(derm)
 	nextSkep := skep + 1
 	for _, r := range F.input {
 		if len(r.keys) >= nextSkep {
 			if strings.Join(r.keys[0:skep], ".") == strings.Join(prefix, ".") {
+				isNum := false
+				if regexp.MustCompile("^[0-9]+").FindString(r.keys[skep]) != "" {
+					isNum = true
+
+				}
 				if len(r.keys) == nextSkep {
-					data[r.keys[skep]] = r.value
+					if isNum {
+						data1 = append(data1, r.value)
+					} else {
+						data2[r.keys[skep]] = r.value
+					}
 				} else {
-					data[r.keys[skep]] = F.unmarshal(r.keys[0:nextSkep], nextSkep)
+					if isNum {
+						data1 = append(data1, F.unmarshal(r.keys[0:nextSkep], nextSkep))
+					} else {
+						data2[r.keys[skep]] = F.unmarshal(r.keys[0:nextSkep], nextSkep)
+					}
 				}
 			}
 		}
 	}
-	return data
+	if len(data1) > 0 {
+		return data1
+	}
+	if len(data2) > 0 {
+		return data2
+	}
+	return nil
 }
