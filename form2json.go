@@ -14,7 +14,7 @@ type input struct {
 	keys  []string
 	value string
 }
-type der map[interface{}]interface{}
+type der map[string]interface{}
 
 //Unmarshal form转json
 func Unmarshal(s string, str interface{}) (string, error) {
