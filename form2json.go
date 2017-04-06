@@ -38,10 +38,7 @@ func Unmarshal(s string, str interface{}) (string, error) {
 	}
 	data := F.unmarshal([]string{}, 0)
 	d, _ := json.Marshal(data)
-	jsonStr := string(d)
-	jsonStr = regexp.MustCompile(`\:\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(jsonStr, ":$1")
-	jsonStr = regexp.MustCompile(`\[\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(jsonStr, "[$1")
-	jsonStr = regexp.MustCompile(`\,\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(jsonStr, ",$1")
+	jsonStr := regexp.MustCompile(`\"([0-9]|[0-9]+(\.)+[0-9]+|[1-9]+[0-9]+|true|false)\"`).ReplaceAllString(string(d), "$1")
 	if str != nil {
 		err = json.Unmarshal([]byte(jsonStr), str)
 	}
